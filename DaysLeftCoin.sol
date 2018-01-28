@@ -27,6 +27,7 @@ contract owned {
 }
 
 /** DaysLeft is a contract where one coin represents one day, and everyone's balance is reduced by 1 every day
+    @todo Although we should only mint coins once for each person, a person could have multiple wallets - he just only gets the starting time once on one wallet
 */
 contract DaysLeft is owned {
     // Generic properties used by Ethereum
@@ -195,10 +196,13 @@ contract DaysLeft is owned {
         
         // Start balance
         var ageInDays = (now - _birth) / 86400;
-        balanceOf[_newAddress] = balanceAtBirth - ageInDays * 10 ** uint256(decimals);
+        var balanceSpent = ageInDays * 10 ** uint256(decimals);
+        balanceOf[_newAddress] = balanceAtBirth - balanceSpent;
         totalSupply += balanceOf[_newAddress];
         
         // Notify clients
+        // Note: we send a Burn event to indicate how many days the new user has already spent
+        Burn(_newAddress, balanceSpent);
         AddressRegistered(_newAddress, _birth, balanceOf[_newAddress]);
     }
     /** Const function to check if you are registered */
