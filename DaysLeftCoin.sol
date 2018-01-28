@@ -37,7 +37,7 @@ contract DaysLeft is owned {
     uint8 public decimals = 18;
 
     // Version of the contract code
-    string public codeVersion = "0.3";
+    string public codeVersion = "0.4";
 
     // The total supply of time in the contract
     uint256 public totalSupply;
