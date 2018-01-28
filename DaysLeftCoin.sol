@@ -60,7 +60,7 @@ contract DaysLeft is owned {
     
     // Notify clients of a new address added to the system
     // TODO In the future, this should only be for a new person (and once everyone is registered: at the birth of a new person)
-    event AddressRegistered(address indexed newAddress, uint birthDay);
+    event AddressRegistered(address indexed newAddress, uint birthDay, uint startBalance);
 
     /**
      * Constrctor function
@@ -172,7 +172,7 @@ contract DaysLeft is owned {
         totalSupply += balanceOf[_newAddress];
         
         // Notify clients
-        AddressRegistered(_newAddress, _birth);
+        AddressRegistered(_newAddress, _birth, balanceOf[_newAddress]);
     }
     
     // TODO Check with last check time and if days have passed, burn everyone
