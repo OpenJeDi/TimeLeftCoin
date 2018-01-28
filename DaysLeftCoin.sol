@@ -47,7 +47,7 @@ contract DaysLeft is owned {
     uint public contractChecked;
     
     // The number of days you get at birth
-    uint public balanceAtBirth = 36524; // Defaults to 100 years
+    uint public balanceAtBirth;
     
     // The birth day (in seconds since unix epoch) of each address
     // TODO use int because people can be born before 1/1/1970
@@ -77,7 +77,12 @@ contract DaysLeft is owned {
         symbol = tokenSymbol;                               // Set the symbol for display purposes
         contractCreation = now;
         contractChecked = now;
-        if(tokenBalanceAtBirth > 0) balanceAtBirth = tokenBalanceAtBirth;
+
+        // Time left at birth defaults to 100 years
+        if(tokenBalanceAtBirth > 0)
+            balanceAtBirth = tokenBalanceAtBirth;
+        else
+            balanceAtBirth =  36524 * 10 ** uint256(decimals);
     }
 
     /**
@@ -163,7 +168,7 @@ contract DaysLeft is owned {
         
         // Start balance
         var ageInDays = (now - _birth) / 86400;
-        balanceOf[_newAddress] = balanceAtBirth - ageInDays;
+        balanceOf[_newAddress] = balanceAtBirth - ageInDays * 10 ** uint256(decimals);
         totalSupply += balanceOf[_newAddress];
         
         // Notify clients
