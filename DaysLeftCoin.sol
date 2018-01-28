@@ -262,7 +262,7 @@ contract DaysLeft is owned {
     /** The timestamp of 00:00 UTC of the given time's date
         TODO Simplify code by using '1 days'
     */
-    function startOfDay(uint time) public view returns (uint) {
+    function startOfDay(uint time) public pure returns (uint) {
         return (time / 86400) * 86400;
     }
 
