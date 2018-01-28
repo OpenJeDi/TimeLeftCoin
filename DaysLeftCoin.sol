@@ -221,7 +221,7 @@ contract DaysLeft is owned {
                 var addr = addressOfIndex[i];
 
                 // Enough balance?
-                if(balanceof[addr] >= amount) {
+                if(balanceOf[addr] >= amount) {
                     totalAmount += amount;
                     balanceOf[addr] -= amount;
                 }
