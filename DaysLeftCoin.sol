@@ -209,7 +209,7 @@ contract DaysLeft is owned {
         assert(contractChecked <= now);
 
         // Burn when at least a day is passed
-        var daysSinceChecked = (now - contractChecked) / 86400; // Seonds to days
+        var daysSinceChecked = (now - contractChecked) / 86400; // Seconds to days
         if(daysSinceChecked >= 1) {
             
             // Burn all balances with daysSinceChecked days
