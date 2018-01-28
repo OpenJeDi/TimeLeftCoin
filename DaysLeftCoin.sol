@@ -27,7 +27,6 @@ contract owned {
 }
 
 /** DaysLeft is a contract where one coin represents one day, and everyone's balance is reduced by 1 every day
-    @todo Store nextBurnTime instead of waiting one day after the last check
 */
 contract DaysLeft is owned {
     // Generic properties used by Ethereum
@@ -55,6 +54,8 @@ contract DaysLeft is owned {
     
     // Creation date (in seconds since unix epoch) of the contract (set when the contract is deployed and never changed)
     uint public contractCreation;
+    // Next time a time burn has to be performed
+    uint public nextTimeBurn;
     // Last date (in seconds since unix epoch) the contract was checked
     uint public lastTimeBurn;
     
@@ -77,8 +78,8 @@ contract DaysLeft is owned {
     // TODO In the future, this should only be for a new person (and once everyone is registered: at the birth of a new person)
     event AddressRegistered(address indexed newAddress, uint birthDay, uint startBalance);
 
-    // Notify clients of a time burn (we only burn when at least a day has passed since the last check)
-    event TimeBurn(address indexed who, uint256 totalAmount, uint previousCheckTime);
+    // Notify clients when a time burn occurred
+    event TimeBurn(address indexed who, uint256 totalAmount, uint previousTimeBurn);
 
     /**
      * Constrctor function
@@ -95,6 +96,7 @@ contract DaysLeft is owned {
         name = tokenName;                                   // Set the name for display purposes
         symbol = tokenSymbol;                               // Set the symbol for display purposes
         contractCreation = now;
+        nextTimeBurn = startOfDay(now) + 1 days; // Next time burn is the start of the next day
         lastTimeBurn = now;
 
         // Time left at birth defaults to 100 years
@@ -211,13 +213,15 @@ contract DaysLeft is owned {
         // Last check time should never be in the future
         assert(lastTimeBurn <= now);
 
-        // Burn when at least a day is passed
-        var daysSinceChecked = (now - lastTimeBurn) / 86400; // Seconds to days
-        var burnNecessary = daysSinceChecked >= 1;
-        require(burnNecessary);
+        // Only when time burn is necessary
+        require(now >= nextTimeBurn);
 
-        // Burn all balances with daysSinceChecked days
-        var amount = daysSinceChecked * 10 ** uint256(decimals);
+        // Set next burn time: the start of the next day
+        nextTimeBurn = startOfDay(now) + 1 days;
+
+        // Burn all balances
+        var daysToBurn = 1 + (now - nextTimeBurn) / 1 days;
+        var amount = daysToBurn * 10 ** uint256(decimals);
         var totalAmount = uint(0);
 
         // Actually burn the events
@@ -230,28 +234,33 @@ contract DaysLeft is owned {
                 balanceOf[addr] -= amount;
             }
             else {
-                // TODO We just clear the balance for now, we have to implement dying logic
+                // TODO We just clear the balance for now, we have to implement dying logic and events
                 totalAmount += balanceOf[addr];
                 balanceOf[addr] = 0;
             }
         }
         
+        // Update the total supply
         totalSupply -= totalAmount;
 
         // Time burn event (note that we send the total amount burnt)
         TimeBurn(msg.sender, totalAmount, lastTimeBurn);
-        
-        // Update the check time
+
+        // Update the last time burn time
         lastTimeBurn = now;
     }
 
     /** Const function to determine whether a time burn is necessary since the last check */
     function isTimeBurnNecessary() public view returns (bool) {
-        // Burn when at least a day is passed
-        var daysSinceChecked = (now - lastTimeBurn) / 86400; // Seconds to days
-        return daysSinceChecked >= 1;
+        return now >= nextTimeBurn;
     }
 
+    /** The timestamp of 00:00 UTC of the given time's date
+        @todo Simplify code by using '1 days'
+    */
+    function startOfDay(uint time) public view returns (uint) {
+        return (time / 86400) * 86400;
+    }
 
     ///// Test Functionality /////
 
