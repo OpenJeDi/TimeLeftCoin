@@ -190,7 +190,8 @@ contract DaysLeft is owned {
     
     // Check with last check time and if days have passed, burn everyone
     // Note that everyone can run this function: the idea that if I don't do it someone in the community will (somewhere within a day)
-    function checkBalance() public {
+    // TODO Maybe only allow registered users or owner to do this?
+    function checkTimeBurn() public {
         // Last check time should never be in the future
         assert(contractChecked <= now);
 
