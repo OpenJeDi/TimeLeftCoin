@@ -77,7 +77,7 @@ contract DaysLeft is owned {
     event AddressRegistered(address indexed newAddress, uint birthDay, uint startBalance);
 
     // Notify clients of a time burn (we only burn when at least a day has passed since the last check)
-    event TimeBurn(uint256 value, uint previousCheckTime);
+    event TimeBurn(address indexed who, uint256 totalAmount, uint previousCheckTime);
 
     /**
      * Constrctor function
@@ -238,7 +238,7 @@ contract DaysLeft is owned {
         totalSupply -= totalAmount;
 
         // Time burn event (note that we send the total amount burnt)
-        TimeBurn(totalAmount, contractChecked);
+        TimeBurn(msg.sender, totalAmount, contractChecked);
         
         // Update the check time
         contractChecked = now;
