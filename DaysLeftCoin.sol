@@ -76,10 +76,8 @@ contract DaysLeft is owned {
     // TODO In the future, this should only be for a new person (and once everyone is registered: at the birth of a new person)
     event AddressRegistered(address indexed newAddress, uint birthDay, uint startBalance);
 
-    // Notify clients that a time burn check is performed
-    event TimeBurnCheck(address indexed who, bool burned);
     // Notify clients of a time burn (we only burn when at least a day has passed since the last check)
-    event TimeBurn(uint256 value, uint previousCheckTime);
+    event TimeBurn(address indexed who, uint256 totalAmount, uint previousCheckTime);
 
     /**
      * Constrctor function
@@ -200,51 +198,50 @@ contract DaysLeft is owned {
         // Notify clients
         AddressRegistered(_newAddress, _birth, balanceOf[_newAddress]);
     }
-    
-    // Check with last check time and if days have passed, burn everyone
+    /** Const function to check if you are registered */
+    function amIRegistered() public view returns (bool) {
+        return isRegistered[msg.sender];
+    }
+
+    // Burn time (if necessary)
     // Note that everyone can run this function: the idea that if I don't do it someone in the community will (somewhere within a day)
     // TODO Maybe only allow registered users or owner to do this?
-    // TODO We can use require(burnNecessary) so the function is not executed when not necessary
-    function checkTimeBurn() public {
+    function burnTime() public {
         // Last check time should never be in the future
         assert(contractChecked <= now);
 
         // Burn when at least a day is passed
         var daysSinceChecked = (now - contractChecked) / 86400; // Seconds to days
         var burnNecessary = daysSinceChecked >= 1;
+        require(burnNecessary);
 
-        // Time burn check event
-        TimeBurnCheck(msg.sender, burnNecessary);
+        // Burn all balances with daysSinceChecked days
+        var amount = daysSinceChecked * 10 ** uint256(decimals);
+        var totalAmount = uint(0);
 
-        if(burnNecessary) {
-            // Burn all balances with daysSinceChecked days
-            var amount = daysSinceChecked * 10 ** uint256(decimals);
-            var totalAmount = uint(0);
+        // Actually burn the events
+        for(var i = uint(0); i < addressCount; ++i) {
+            var addr = addressOfIndex[i];
 
-            // Actually burn the events
-            for(var i = uint(0); i < addressCount; ++i) {
-                var addr = addressOfIndex[i];
-
-                // Enough balance?
-                if(balanceOf[addr] >= amount) {
-                    totalAmount += amount;
-                    balanceOf[addr] -= amount;
-                }
-                else {
-                    // TODO We just clear the balance for now, we have to implement dying logic
-                    totalAmount += balanceOf[addr];
-                    balanceOf[addr] = 0;
-                }
+            // Enough balance?
+            if(balanceOf[addr] >= amount) {
+                totalAmount += amount;
+                balanceOf[addr] -= amount;
             }
-            
-            totalSupply -= totalAmount;
-
-            // Time burn event (note that we send the total amount burnt)
-            TimeBurn(totalAmount, contractChecked);
-            
-            // Update the check time
-            contractChecked = now;
+            else {
+                // TODO We just clear the balance for now, we have to implement dying logic
+                totalAmount += balanceOf[addr];
+                balanceOf[addr] = 0;
+            }
         }
+        
+        totalSupply -= totalAmount;
+
+        // Time burn event (note that we send the total amount burnt)
+        TimeBurn(msg.sender, totalAmount, contractChecked);
+        
+        // Update the check time
+        contractChecked = now;
     }
 
     /** Const function to determine whether a time burn is necessary since the last check */
