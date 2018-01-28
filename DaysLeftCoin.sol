@@ -2,6 +2,9 @@ pragma solidity ^0.4.16;
 
 interface tokenRecipient { function receiveApproval(address _from, uint256 _value, address _token, bytes _extraData) public; }
 
+/** An owned contract has a owner and can add functions using the onlyOwner modifier,
+    so only the owner can run those functions
+*/
 contract owned {
     address public owner;
 
