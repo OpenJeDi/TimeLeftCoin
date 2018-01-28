@@ -35,8 +35,8 @@ contract DaysLeft is owned {
     // 18 decimals is the strongly suggested default, avoid changing it
     uint8 public decimals = 18;
 
-    // Version of the contract
-    string public version = "0.2";
+    // Version of the contract code
+    string public codeVersion = "0.2";
 
     // The total supply of time in the contract
     uint256 public totalSupply;
