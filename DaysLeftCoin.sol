@@ -8,29 +8,38 @@ interface tokenRecipient { function receiveApproval(address _from, uint256 _valu
 contract owned {
     address public owner;
 
+    // Constructor
     function owned() public {
         owner = msg.sender;
     }
 
+    // Use the onlyOwner modifier for functions that can only be run by the owner
+    // Note that ideally, when a contract is really finished there should be no owner because that means central control
     modifier onlyOwner {
         require(msg.sender == owner);
         _;
     }
 
+    /** Transfer ownership to another wallet */
     function transferOwnership(address newOwner) onlyOwner public {
         owner = newOwner;
     }
 }
 
+/** DaysLeft is a contract where one coin represents one day, and everyone's balance is reduced by 1 every day
+*/
 contract DaysLeft is owned {
-    // Public variables of the token
+    // Generic properties used by Ethereum
     string public name;
     string public symbol;
-    uint8 public decimals = 18;
     // 18 decimals is the strongly suggested default, avoid changing it
+    uint8 public decimals = 18;
+
+
+    // The total supply of time in the contract
     uint256 public totalSupply;
 
-    // This creates an array with all balances
+    // The current balance of everyone in the system
     mapping (address => uint256) public balanceOf;
 
     // This generates a public event on the blockchain that will notify clients
@@ -41,15 +50,15 @@ contract DaysLeft is owned {
 
     /** DaysLeft specific */
     
-    // Creation date (in seconds since unix epoch) of the contract
+    // Creation date (in seconds since unix epoch) of the contract (set when the contract is deployed and never changed)
     uint public contractCreation;
     // Last date (in seconds since unix epoch) the contract was checked
     uint public contractChecked;
     
-    // The number of days you get at birth
+    // The number of days you get at birth (with the decimals already taken care of)
     uint public balanceAtBirth;
 
-    // The minimum balance that needs to be left after a transfer
+    // The minimum balance that needs to be left after a transfer (with the decimals already taken care of)
     uint public minBalanceAfterTransfer;
     
     // The birth day (in seconds since unix epoch) of each address
