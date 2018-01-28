@@ -200,7 +200,11 @@ contract DaysLeft is owned {
         // Notify clients
         AddressRegistered(_newAddress, _birth, balanceOf[_newAddress]);
     }
-    
+    /** Const function to check if you are registered */
+    function amIRegistered() public view returns (bool) {
+        return isRegistered[msg.sender];
+    }
+
     // Check with last check time and if days have passed, burn everyone
     // Note that everyone can run this function: the idea that if I don't do it someone in the community will (somewhere within a day)
     // TODO Maybe only allow registered users or owner to do this?
