@@ -27,7 +27,7 @@ contract owned {
 }
 
 /** DaysLeft is a contract where one coin represents one day, and everyone's balance is reduced by 1 every day
-    @todo Although we should only mint coins once for each person, a person could have multiple wallets - he just only gets the starting time once on one wallet
+    TODO Although we should only mint coins once for each person, a person could have multiple wallets - he just only gets the starting time once on one wallet
 */
 contract DaysLeft is owned {
     // Generic properties used by Ethereum
@@ -260,7 +260,7 @@ contract DaysLeft is owned {
     }
 
     /** The timestamp of 00:00 UTC of the given time's date
-        @todo Simplify code by using '1 days'
+        TODO Simplify code by using '1 days'
     */
     function startOfDay(uint time) public view returns (uint) {
         return (time / 86400) * 86400;
