@@ -65,6 +65,8 @@ contract DaysLeft is owned {
     // TODO In the future, this should only be for a new person (and once everyone is registered: at the birth of a new person)
     event AddressRegistered(address indexed newAddress, uint birthDay, uint startBalance);
 
+    // Notify clients that a time burn check is performed
+    event TimeBurnCheck(address indexed who, bool burned);
     // Notify clients of a time burn (we only burn when at least a day has passed since the last check)
     event TimeBurn(uint256 value, uint previousCheckTime);
 
@@ -220,6 +222,9 @@ contract DaysLeft is owned {
             }
             
             totalSupply -= totalAmount;
+
+            // Time burn check event
+            TimeBurnCheck(msg.sender, totalSupply > 0);
 
             // Time burn event (note that we send the total amount burnt)
             TimeBurn(totalAmount, contractChecked);
