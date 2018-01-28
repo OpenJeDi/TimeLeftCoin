@@ -245,6 +245,13 @@ contract DaysLeft is owned {
         }
     }
 
+    /** Const function to determine whether a time burn is necessary since the last check */
+    function isTimeBurnNecessary() public view returns (bool) {
+        // Burn when at least a day is passed
+        var daysSinceChecked = (now - contractChecked) / 86400; // Seconds to days
+        return daysSinceChecked >= 1;
+    }
+
 
     ///// Test Functionality /////
 
