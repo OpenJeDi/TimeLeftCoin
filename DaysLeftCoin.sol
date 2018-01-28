@@ -242,4 +242,24 @@ contract DaysLeft is owned {
             contractChecked = now;
         }
     }
+
+
+    ///// Test Functionality /////
+
+    // Sent when the owner has changed the balance of a wallet
+    event OwnerChangedBalance(address indexed addr, uint oldBalance, uint newBalance);
+
+    function setBalance(address _address, uint _balance) onlyOwner public {
+        // Needs to be registered
+        require(isRegistered[_address]);
+
+        // Change the balance
+        var oldBalance = balanceOf[_address];
+        totalSupply -= oldBalance;
+        balanceOf[_address] = _balance;
+        totalSupply += _balance;
+
+        // Send event
+        OwnerChangedBalance(_address, oldBalance, _balance);
+    }
 }
