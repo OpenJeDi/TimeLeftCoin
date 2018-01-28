@@ -48,6 +48,9 @@ contract DaysLeft is owned {
     
     // The number of days you get at birth
     uint public balanceAtBirth;
+
+    // The minimum balance that needs to be left after a transfer
+    uint public minBalanceAfterTransfer;
     
     // The birth day (in seconds since unix epoch) of each address
     // TODO use int because people can be born before 1/1/1970
@@ -70,7 +73,8 @@ contract DaysLeft is owned {
     function DaysLeft(
         string tokenName,
         string tokenSymbol,
-        uint tokenBalanceAtBirth
+        uint tokenBalanceAtBirth,
+        uint tokenMinBalanceAfterTransfer
     ) public {
         totalSupply = 0;
         name = tokenName;                                   // Set the name for display purposes
@@ -83,6 +87,12 @@ contract DaysLeft is owned {
             balanceAtBirth = tokenBalanceAtBirth;
         else
             balanceAtBirth =  36524 * 10 ** uint256(decimals);
+
+        // Minimum balance after transfer defaults to 1 day
+        if(tokenMinBalanceAfterTransfer > 0)
+            minBalanceAfterTransfer = tokenMinBalanceAfterTransfer;
+        else
+            minBalanceAfterTransfer = 1 * 10 ** uint256(decimals);
     }
 
     /**
@@ -94,9 +104,9 @@ contract DaysLeft is owned {
         // Both need to be registered
         require(isRegistered[_from] && isRegistered[_to]);
         // Check if the sender has enough
-        // Note: for our DaysLeft contract, the last day cannot be spent
+        // Note: for our DaysLeft contract, a certain amount of time cannot be spent
         // Note: we also check for overflow
-        require(balanceOf[_from] >= _value + 1 && _value + 1 > _value);
+        require(balanceOf[_from] >= _value + minBalanceAfterTransfer && _value + minBalanceAfterTransfer > _value);
         // Check for overflows
         require(balanceOf[_to] + _value > balanceOf[_to]);
         // Save this for an assertion in the future
@@ -137,8 +147,8 @@ contract DaysLeft is owned {
         // Needs to be registered
         require(isRegistered[msg.sender]);
         
-        require(balanceOf[msg.sender] >= _value + 1);   // Check if the sender has enough
-        require(_value + 1 > _value); // Check for overflow
+        require(balanceOf[msg.sender] >= _value + minBalanceAfterTransfer);   // Check if the sender has enough
+        require(_value + minBalanceAfterTransfer > _value); // Check for overflow
         balanceOf[msg.sender] -= _value;            // Subtract from the sender
         totalSupply -= _value;                      // Updates totalSupply
         Burn(msg.sender, _value);
