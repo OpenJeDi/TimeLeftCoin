@@ -27,6 +27,7 @@ contract owned {
 }
 
 /** DaysLeft is a contract where one coin represents one day, and everyone's balance is reduced by 1 every day
+    @todo Store nextBurnTime instead of waiting one day after the last check
 */
 contract DaysLeft is owned {
     // Generic properties used by Ethereum
@@ -55,7 +56,7 @@ contract DaysLeft is owned {
     // Creation date (in seconds since unix epoch) of the contract (set when the contract is deployed and never changed)
     uint public contractCreation;
     // Last date (in seconds since unix epoch) the contract was checked
-    uint public contractChecked;
+    uint public lastTimeBurn;
     
     // The number of days you get at birth (with the decimals already taken care of)
     uint public balanceAtBirth;
@@ -94,7 +95,7 @@ contract DaysLeft is owned {
         name = tokenName;                                   // Set the name for display purposes
         symbol = tokenSymbol;                               // Set the symbol for display purposes
         contractCreation = now;
-        contractChecked = now;
+        lastTimeBurn = now;
 
         // Time left at birth defaults to 100 years
         if(tokenBalanceAtBirth > 0)
@@ -208,10 +209,10 @@ contract DaysLeft is owned {
     // TODO Maybe only allow registered users or owner to do this?
     function burnTime() public {
         // Last check time should never be in the future
-        assert(contractChecked <= now);
+        assert(lastTimeBurn <= now);
 
         // Burn when at least a day is passed
-        var daysSinceChecked = (now - contractChecked) / 86400; // Seconds to days
+        var daysSinceChecked = (now - lastTimeBurn) / 86400; // Seconds to days
         var burnNecessary = daysSinceChecked >= 1;
         require(burnNecessary);
 
@@ -238,16 +239,16 @@ contract DaysLeft is owned {
         totalSupply -= totalAmount;
 
         // Time burn event (note that we send the total amount burnt)
-        TimeBurn(msg.sender, totalAmount, contractChecked);
+        TimeBurn(msg.sender, totalAmount, lastTimeBurn);
         
         // Update the check time
-        contractChecked = now;
+        lastTimeBurn = now;
     }
 
     /** Const function to determine whether a time burn is necessary since the last check */
     function isTimeBurnNecessary() public view returns (bool) {
         // Burn when at least a day is passed
-        var daysSinceChecked = (now - contractChecked) / 86400; // Seconds to days
+        var daysSinceChecked = (now - lastTimeBurn) / 86400; // Seconds to days
         return daysSinceChecked >= 1;
     }
 
