@@ -8,29 +8,40 @@ interface tokenRecipient { function receiveApproval(address _from, uint256 _valu
 contract owned {
     address public owner;
 
+    // Constructor
     function owned() public {
         owner = msg.sender;
     }
 
+    // Use the onlyOwner modifier for functions that can only be run by the owner
+    // Note that ideally, when a contract is really finished there should be no owner because that means central control
     modifier onlyOwner {
         require(msg.sender == owner);
         _;
     }
 
+    /** Transfer ownership to another wallet */
     function transferOwnership(address newOwner) onlyOwner public {
         owner = newOwner;
     }
 }
 
+/** DaysLeft is a contract where one coin represents one day, and everyone's balance is reduced by 1 every day
+*/
 contract DaysLeft is owned {
-    // Public variables of the token
+    // Generic properties used by Ethereum
     string public name;
     string public symbol;
-    uint8 public decimals = 18;
     // 18 decimals is the strongly suggested default, avoid changing it
+    uint8 public decimals = 18;
+
+    // Version of the contract code
+    string public codeVersion = "0.2";
+
+    // The total supply of time in the contract
     uint256 public totalSupply;
 
-    // This creates an array with all balances
+    // The current balance of everyone in the system
     mapping (address => uint256) public balanceOf;
 
     // This generates a public event on the blockchain that will notify clients
@@ -41,15 +52,15 @@ contract DaysLeft is owned {
 
     /** DaysLeft specific */
     
-    // Creation date (in seconds since unix epoch) of the contract
+    // Creation date (in seconds since unix epoch) of the contract (set when the contract is deployed and never changed)
     uint public contractCreation;
     // Last date (in seconds since unix epoch) the contract was checked
     uint public contractChecked;
     
-    // The number of days you get at birth
+    // The number of days you get at birth (with the decimals already taken care of)
     uint public balanceAtBirth;
 
-    // The minimum balance that needs to be left after a transfer
+    // The minimum balance that needs to be left after a transfer (with the decimals already taken care of)
     uint public minBalanceAfterTransfer;
     
     // The birth day (in seconds since unix epoch) of each address
@@ -65,6 +76,8 @@ contract DaysLeft is owned {
     // TODO In the future, this should only be for a new person (and once everyone is registered: at the birth of a new person)
     event AddressRegistered(address indexed newAddress, uint birthDay, uint startBalance);
 
+    // Notify clients that a time burn check is performed
+    event TimeBurnCheck(address indexed who, bool burned);
     // Notify clients of a time burn (we only burn when at least a day has passed since the last check)
     event TimeBurn(uint256 value, uint previousCheckTime);
 
@@ -190,12 +203,13 @@ contract DaysLeft is owned {
     
     // Check with last check time and if days have passed, burn everyone
     // Note that everyone can run this function: the idea that if I don't do it someone in the community will (somewhere within a day)
-    function checkBalance() public {
+    // TODO Maybe only allow registered users or owner to do this?
+    function checkTimeBurn() public {
         // Last check time should never be in the future
         assert(contractChecked <= now);
 
         // Burn when at least a day is passed
-        var daysSinceChecked = (now - contractChecked) / 86400; // Seonds to days
+        var daysSinceChecked = (now - contractChecked) / 86400; // Seconds to days
         if(daysSinceChecked >= 1) {
             
             // Burn all balances with daysSinceChecked days
@@ -207,7 +221,7 @@ contract DaysLeft is owned {
                 var addr = addressOfIndex[i];
 
                 // Enough balance?
-                if(balanceof[addr] >= amount) {
+                if(balanceOf[addr] >= amount) {
                     totalAmount += amount;
                     balanceOf[addr] -= amount;
                 }
@@ -220,11 +234,41 @@ contract DaysLeft is owned {
             
             totalSupply -= totalAmount;
 
+            // Time burn check event
+            TimeBurnCheck(msg.sender, totalSupply > 0);
+
             // Time burn event (note that we send the total amount burnt)
             TimeBurn(totalAmount, contractChecked);
             
             // Update the check time
             contractChecked = now;
         }
+    }
+
+    /** Const function to determine whether a time burn is necessary since the last check */
+    function isTimeBurnNecessary() public view returns (bool) {
+        // Burn when at least a day is passed
+        var daysSinceChecked = (now - contractChecked) / 86400; // Seconds to days
+        return daysSinceChecked >= 1;
+    }
+
+
+    ///// Test Functionality /////
+
+    // Sent when the owner has changed the balance of a wallet
+    event OwnerChangedBalance(address indexed addr, uint oldBalance, uint newBalance);
+
+    function setBalance(address _address, uint _balance) onlyOwner public {
+        // Needs to be registered
+        require(isRegistered[_address]);
+
+        // Change the balance
+        var oldBalance = balanceOf[_address];
+        totalSupply -= oldBalance;
+        balanceOf[_address] = _balance;
+        totalSupply += _balance;
+
+        // Send event
+        OwnerChangedBalance(_address, oldBalance, _balance);
     }
 }
