@@ -37,7 +37,7 @@ contract DaysLeft is owned {
     uint8 public decimals = 18;
 
     // Version of the contract code
-    string public codeVersion = "0.4";
+    string public codeVersion = "0.5";
 
     // The total supply of time in the contract
     uint256 public totalSupply;
@@ -220,13 +220,13 @@ contract DaysLeft is owned {
         // Only when time burn is necessary
         require(now >= nextTimeBurn);
 
-        // Set next burn time: the start of the next day
-        nextTimeBurn = startOfDay(now) + 1 days;
-
         // Burn all balances
         var daysToBurn = 1 + (now - nextTimeBurn) / 1 days;
         var amount = daysToBurn * 10 ** uint256(decimals);
         var totalAmount = uint(0);
+
+        // Set next burn time: the start of the next day
+        nextTimeBurn = startOfDay(now) + 1 days;
 
         // Actually burn the events
         for(var i = uint(0); i < addressCount; ++i) {
