@@ -220,13 +220,13 @@ contract DaysLeft is owned {
         // Only when time burn is necessary
         require(now >= nextTimeBurn);
 
-        // Set next burn time: the start of the next day
-        nextTimeBurn = startOfDay(now) + 1 days;
-
         // Burn all balances
         var daysToBurn = 1 + (now - nextTimeBurn) / 1 days;
         var amount = daysToBurn * 10 ** uint256(decimals);
         var totalAmount = uint(0);
+
+        // Set next burn time: the start of the next day
+        nextTimeBurn = startOfDay(now) + 1 days;
 
         // Actually burn the events
         for(var i = uint(0); i < addressCount; ++i) {
