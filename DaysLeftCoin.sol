@@ -174,6 +174,7 @@ contract DaysLeft is owned {
     /** DaysLeft specific code start */
     
     // Note: for now this is only for the owner, until we have a proper way of automatically verifying the birth date
+    // TODO When you do this before a necessary time burn is performed, the user will lose days when the time burn is performed! To by in sync with the rest of the users, we should add the tokens to be burned in this step
     function registerAddress(address _newAddress, uint _birth) onlyOwner public {
         // We can only register once
         require(!isRegistered[_newAddress]);
