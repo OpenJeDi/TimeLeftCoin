@@ -258,6 +258,13 @@ contract DaysLeft is owned {
         return now >= nextTimeBurn;
     }
 
+    function numTimeBurnsNecessary() public view returns (uint) {
+        if(now < nextTimeBurn)
+            return 0;
+
+        return 1 + (now - nextTimeBurn) / 1 days;
+    }
+
     /** The timestamp of 00:00 UTC of the given time's date
         TODO Simplify code by using '1 days'
     */
