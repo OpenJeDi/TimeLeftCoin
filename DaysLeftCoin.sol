@@ -37,11 +37,9 @@ contract DaysLeft is owned {
     // Version of the contract code
     string public codeVersion = "0.6";
 
-    // The total supply of time in the contract
-    uint256 public totalSupply;
-
-    // The current balance of everyone in the system
-    mapping (address => uint256) public balanceOf;
+    // The extra balance (in addition to their time balance) of everyone in the system
+    // Note: can be negative
+    mapping (address => int256) public extraBalanceOf;
 
     // This generates a public event on the blockchain that will notify clients
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -59,6 +57,7 @@ contract DaysLeft is owned {
     uint public lastTimeBurn;
     
     // The number of days you get at birth (with the decimals already taken care of)
+    // TODO No reason this can't be negative
     uint public balanceAtBirth;
 
     // The minimum balance that needs to be left after a transfer (with the decimals already taken care of)
@@ -78,7 +77,7 @@ contract DaysLeft is owned {
     event AddressRegistered(address indexed newAddress, uint birthDay, uint startBalance);
 
     // Notify clients when a time burn occurred
-    event TimeBurn(address indexed who, uint256 eachAmount, uint256 totalAmount, uint previousTimeBurn);
+    //event TimeBurn(address indexed who, uint256 eachAmount, uint256 totalAmount, uint previousTimeBurn);
 
     /**
      * Constrctor function
@@ -91,7 +90,6 @@ contract DaysLeft is owned {
         uint tokenBalanceAtBirth,
         uint tokenMinBalanceAfterTransfer
     ) public {
-        totalSupply = 0;
         name = tokenName;                                   // Set the name for display purposes
         symbol = tokenSymbol;                               // Set the symbol for display purposes
         contractCreation = now;
@@ -111,8 +109,27 @@ contract DaysLeft is owned {
             minBalanceAfterTransfer = 1 * 10 ** uint256(decimals);
     }
 
+    /** Calculate balance */
+    function balanceOf(address _owner) public view returns (uint256 balance) {
+        return uint256(timeTokensLeftOf(_owner) + extraBalanceOf[_owner]);
+    }
+
+    // The total supply of time in the contract
+    function totalSupply() public view returns (uint256 supply) {
+        supply = 0;
+
+        for(var i = uint(0); i < addressCount; ++i) {
+            var addr = addressOfIndex[i];
+            supply += balanceOf(addr);
+        }
+
+        return supply;
+    }
+
+
     /**
      * Internal transfer, only can be called by this contract
+       // TODO Make sure the convertion from uint to int doesn't overflow/cut: value can only be max MAX_UINT256/2
      */
     function _transfer(address _from, address _to, uint _value) internal {
         // Prevent transfer to 0x0 address. Use burn() instead
@@ -122,18 +139,14 @@ contract DaysLeft is owned {
         // Check if the sender has enough
         // Note: for our DaysLeft contract, a certain amount of time cannot be spent
         // Note: we also check for overflow
-        require(balanceOf[_from] >= _value + minBalanceAfterTransfer && _value + minBalanceAfterTransfer > _value);
+        require(balanceOf(_from) >= _value + minBalanceAfterTransfer && _value + minBalanceAfterTransfer > _value);
         // Check for overflows
-        require(balanceOf[_to] + _value > balanceOf[_to]);
-        // Save this for an assertion in the future
-        uint previousBalances = balanceOf[_from] + balanceOf[_to];
+        require(balanceOf(_to) + _value > balanceOf(_to));
         // Subtract from the sender
-        balanceOf[_from] -= _value;
+        extraBalanceOf[_from] -= int(_value);
         // Add the same to the recipient
-        balanceOf[_to] += _value;
+        extraBalanceOf[_to] += int(_value);
         Transfer(_from, _to, _value);
-        // Asserts are used to use static analysis to find bugs in your code. They should never fail
-        assert(balanceOf[_from] + balanceOf[_to] == previousBalances);
     }
 
     /**
@@ -163,10 +176,9 @@ contract DaysLeft is owned {
         // Needs to be registered
         require(isRegistered[msg.sender]);
         
-        require(balanceOf[msg.sender] >= _value + minBalanceAfterTransfer);   // Check if the sender has enough
+        require(balanceOf(msg.sender) >= _value + minBalanceAfterTransfer);   // Check if the sender has enough
         require(_value + minBalanceAfterTransfer > _value); // Check for overflow
-        balanceOf[msg.sender] -= _value;            // Subtract from the sender
-        totalSupply -= _value;                      // Updates totalSupply
+        extraBalanceOf[msg.sender] -= int256(_value);            // Subtract from the sender
         Burn(msg.sender, _value);
         return true;
     }
@@ -193,16 +205,10 @@ contract DaysLeft is owned {
         addressOfIndex[addressCount] = _newAddress;
         addressCount++;
         
-        // Start balance
-        var ageInDays = (now - _birth) / 86400;
-        var balanceSpent = ageInDays * 10 ** uint256(decimals);
-        balanceOf[_newAddress] = balanceAtBirth - balanceSpent;
-        totalSupply += balanceOf[_newAddress];
-        
         // Notify clients
-        // Note: we send a Burn event to indicate how many days the new user has already spent
-        Burn(_newAddress, balanceSpent);
-        AddressRegistered(_newAddress, _birth, balanceOf[_newAddress]);
+        // Note: we send a Burn event to indicate how many time the new user has already spent
+        Burn(_newAddress, balanceAtBirth - uint256(timeTokensLeft(_birth)));
+        AddressRegistered(_newAddress, _birth, balanceOf(_newAddress));
     }
     /** Const function to check if you are registered */
     function amIRegistered() public view returns (bool) {
@@ -212,7 +218,7 @@ contract DaysLeft is owned {
     // Burn time (if necessary)
     // Note that everyone can run this function: the idea that if I don't do it someone in the community will (somewhere within a day)
     // TODO Maybe only allow registered users or owner to do this?
-    function burnTime() public {
+    /*function burnTime() public {
         // Last check time should never be in the future
         assert(lastTimeBurn <= now);
 
@@ -251,7 +257,7 @@ contract DaysLeft is owned {
 
         // Update the last time burn time
         lastTimeBurn = now;
-    }
+    }*/
 
     /** The time tokens left
         Note: can be negative
@@ -294,20 +300,18 @@ contract DaysLeft is owned {
 
     ///// Test Functionality /////
 
-    // Sent when the owner has changed the balance of a wallet
-    event OwnerChangedBalance(address indexed addr, uint oldBalance, uint newBalance);
+    // Sent when the owner has changed the extra balance of a wallet
+    event OwnerChangedExtraBalance(address indexed addr, int oldExtra, int newExtra);
 
-    function setBalance(address _address, uint _balance) onlyOwner public {
+    function setExtraBalance(address _address, int _extraBalance) onlyOwner public {
         // Needs to be registered
-        require(isRegistered[_address]);
+        //require(isRegistered[_address]);
 
         // Change the balance
-        var oldBalance = balanceOf[_address];
-        totalSupply -= oldBalance;
-        balanceOf[_address] = _balance;
-        totalSupply += _balance;
+        var oldExtraBalance = extraBalanceOf[_address];
+        extraBalanceOf[_address] = _extraBalance;
 
         // Send event
-        OwnerChangedBalance(_address, oldBalance, _balance);
+        OwnerChangedExtraBalance(_address, oldExtraBalance, _extraBalance);
     }
 }
