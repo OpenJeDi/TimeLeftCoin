@@ -51,10 +51,6 @@ contract DaysLeft is owned {
     
     // Creation date (in seconds since unix epoch) of the contract (set when the contract is deployed and never changed)
     uint public contractCreation;
-    // Next time a time burn has to be performed
-    uint public nextTimeBurn;
-    // Last date (in seconds since unix epoch) the contract was checked
-    uint public lastTimeBurn;
     
     // The number of days you get at birth (with the decimals already taken care of)
     // TODO No reason this can't be negative
@@ -76,9 +72,6 @@ contract DaysLeft is owned {
     // TODO In the future, this should only be for a new person (and once everyone is registered: at the birth of a new person)
     event AddressRegistered(address indexed newAddress, uint birthDay, uint startBalance);
 
-    // Notify clients when a time burn occurred
-    //event TimeBurn(address indexed who, uint256 eachAmount, uint256 totalAmount, uint previousTimeBurn);
-
     /**
      * Constrctor function
      *
@@ -93,8 +86,6 @@ contract DaysLeft is owned {
         name = tokenName;                                   // Set the name for display purposes
         symbol = tokenSymbol;                               // Set the symbol for display purposes
         contractCreation = now;
-        nextTimeBurn = startOfDay(now) + 1 days; // Next time burn is the start of the next day
-        lastTimeBurn = now;
 
         // Time left at birth defaults to 100 years
         if(tokenBalanceAtBirth > 0)
@@ -216,50 +207,6 @@ contract DaysLeft is owned {
         return isRegistered[msg.sender];
     }
 
-    // Burn time (if necessary)
-    // Note that everyone can run this function: the idea that if I don't do it someone in the community will (somewhere within a day)
-    // TODO Maybe only allow registered users or owner to do this?
-    /*function burnTime() public {
-        // Last check time should never be in the future
-        assert(lastTimeBurn <= now);
-
-        // Only when time burn is necessary
-        require(now >= nextTimeBurn);
-
-        // Burn all balances
-        var daysToBurn = 1 + (now - nextTimeBurn) / 1 days;
-        var amount = daysToBurn * 10 ** uint256(decimals);
-        var totalAmount = uint(0);
-
-        // Set next burn time: the start of the next day
-        nextTimeBurn = startOfDay(now) + 1 days;
-
-        // Actually burn the events
-        for(var i = uint(0); i < addressCount; ++i) {
-            var addr = addressOfIndex[i];
-
-            // Enough balance?
-            if(balanceOf[addr] >= amount) {
-                totalAmount += amount;
-                balanceOf[addr] -= amount;
-            }
-            else {
-                // TODO We just clear the balance for now, we have to implement dying logic and events
-                totalAmount += balanceOf[addr];
-                balanceOf[addr] = 0;
-            }
-        }
-        
-        // Update the total supply
-        totalSupply -= totalAmount;
-
-        // Time burn event (note that we send the total amount burnt)
-        TimeBurn(msg.sender, amount, totalAmount, lastTimeBurn);
-
-        // Update the last time burn time
-        lastTimeBurn = now;
-    }*/
-
     /** The time tokens left
         Note: can be negative
     */
@@ -278,25 +225,6 @@ contract DaysLeft is owned {
 
         var birthDay = birthOf[who];
         return timeTokensLeft(birthDay);
-    }
-
-    /** Const function to determine whether a time burn is necessary since the last check */
-    function isTimeBurnNecessary() public view returns (bool) {
-        return now >= nextTimeBurn;
-    }
-
-    function numTimeBurnsNecessary() public view returns (uint) {
-        if(now < nextTimeBurn)
-            return 0;
-
-        return 1 + (now - nextTimeBurn) / 1 days;
-    }
-
-    /** The timestamp of 00:00 UTC of the given time's date
-        TODO Simplify code by using '1 days'
-    */
-    function startOfDay(uint time) public pure returns (uint) {
-        return (time / 86400) * 86400;
     }
 
     ///// Development Functionality /////
