@@ -115,6 +115,7 @@ contract DaysLeft is owned {
     }
 
     // The total supply of time in the contract
+    // TODO This doesn't scale very wel...
     function totalSupply() public view returns (uint256 supply) {
         supply = 0;
 
@@ -298,7 +299,7 @@ contract DaysLeft is owned {
         return (time / 86400) * 86400;
     }
 
-    ///// Test Functionality /////
+    ///// Development Functionality /////
 
     // Sent when the owner has changed the extra balance of a wallet
     event OwnerChangedExtraBalance(address indexed addr, int oldExtra, int newExtra);
