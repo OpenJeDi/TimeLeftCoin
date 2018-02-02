@@ -253,6 +253,26 @@ contract DaysLeft is owned {
         lastTimeBurn = now;
     }
 
+    /** The time tokens left
+        Note: can be negative
+    */
+    function timeTokensLeft(uint birthDay) public view returns (int) {
+        // Cannot be born in the future
+        if(birthDay > now)
+            return 0;
+
+        // Note: we first multiply so we have a more accurate balance
+        //return int(balanceAtBirth) - int((now - birthDay) / 1 days * 10 ** uint256(decimals));
+        return int(balanceAtBirth) - int((now - birthDay) * 10 ** uint256(decimals)) / 1 days;
+    }
+    function timeTokensLeftOf(address who) public view returns (int) {
+        if(!isRegistered[who])
+            return 0;
+
+        var birthDay = birthOf[who];
+        return timeTokensLeft(birthDay);
+    }
+
     /** Const function to determine whether a time burn is necessary since the last check */
     function isTimeBurnNecessary() public view returns (bool) {
         return now >= nextTimeBurn;
