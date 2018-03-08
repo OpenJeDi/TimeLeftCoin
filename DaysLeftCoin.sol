@@ -35,7 +35,7 @@ contract DaysLeft is owned {
     uint8 public decimals = 18;
 
     // Version of the contract code
-    string public codeVersion = "0.6";
+    string public codeVersion = "0.8";
 
     // The extra balance (in addition to their time balance) of everyone in the system
     // Note: can be negative
@@ -241,5 +241,13 @@ contract DaysLeft is owned {
 
         // Send event
         OwnerChangedExtraBalance(_address, oldExtraBalance, _extraBalance);
+    }
+
+    // Self-destruct the contract
+    event SelfDestructing();
+
+    function selfDestruct() public onlyOwner {
+        SelfDestructing();
+        selfdestruct(owner);
     }
 }
