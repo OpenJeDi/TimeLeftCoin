@@ -243,4 +243,12 @@ contract DaysLeft is owned {
         // Send event
         OwnerChangedExtraBalance(_address, oldExtraBalance, _extraBalance);
     }
+
+    // Self-destruct the contract
+    event SelfDestructing();
+
+    function selfDestruct() public onlyOwner {
+        SelfDestructing();
+        selfdestruct(owner);
+    }
 }
