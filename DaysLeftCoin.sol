@@ -59,10 +59,9 @@ contract DaysLeft is owned {
     // The minimum balance that needs to be left after a transfer (with the decimals already taken care of)
     uint public minBalanceAfterTransfer;
     
-    // The birth day (in seconds since unix epoch) of each address
-    // TODO use int because people can be born before 1/1/1970
+    // The birth day (in seconds since unix epoch) of each address (note: can be negative because there are people born before 1/1/1970)
     // TODO of each person instead of each address (a person can have multiple addresses)
-    mapping (address => uint) public birthOf;
+    mapping (address => int) public birthOf;
     mapping (address => uint) public creationOf;
     mapping (address => bool) public isRegistered;
     mapping (uint => address) public addressOfIndex;
@@ -70,7 +69,7 @@ contract DaysLeft is owned {
     
     // Notify clients of a new address added to the system
     // TODO In the future, this should only be for a new person (and once everyone is registered: at the birth of a new person)
-    event AddressRegistered(address indexed newAddress, uint birthDay, uint startBalance);
+    event AddressRegistered(address indexed newAddress, int birthDay, uint startBalance);
 
     /**
      * Constrctor function
@@ -179,12 +178,12 @@ contract DaysLeft is owned {
     
     // Note: for now this is only for the owner, until we have a proper way of automatically verifying the birth date
     // TODO When you do this before a necessary time burn is performed, the user will lose days when the time burn is performed! To by in sync with the rest of the users, we should add the tokens to be burned in this step
-    function registerAddress(address _newAddress, uint _birth) onlyOwner public {
+    function registerAddress(address _newAddress, int _birth) onlyOwner public {
         // We can only register once
         require(!isRegistered[_newAddress]);
         
         // Cannot be born in the future
-        require(_birth <= now);
+        require(_birth <= int(now));
         
         // Overflow check
         require(addressCount + 1 > addressCount);
@@ -210,14 +209,14 @@ contract DaysLeft is owned {
     /** The time tokens left
         Note: can be negative
     */
-    function timeTokensLeft(uint birthDay) public view returns (int) {
+    function timeTokensLeft(int birthDay) public view returns (int) {
         // Cannot be born in the future
-        if(birthDay > now)
+        if(birthDay > int(now))
             return 0;
 
         // Note: we first multiply so we have a more accurate balance
         //return int(balanceAtBirth) - int((now - birthDay) / 1 days * 10 ** uint256(decimals));
-        return int(balanceAtBirth) - int((now - birthDay) * 10 ** uint256(decimals)) / 1 days;
+        return int(balanceAtBirth) - int(uint(int(now) - birthDay) * 10 ** uint256(decimals)) / 1 days;
     }
     function timeTokensLeftOf(address who) public view returns (int) {
         if(!isRegistered[who])
