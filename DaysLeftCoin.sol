@@ -84,7 +84,7 @@ contract DaysLeft is owned {
     ) public {
         name = tokenName;                                   // Set the name for display purposes
         symbol = tokenSymbol;                               // Set the symbol for display purposes
-        contractCreation = now;
+        contractCreation = currentTime();
 
         // Time left at birth defaults to 100 years
         if(tokenBalanceAtBirth > 0)
@@ -183,14 +183,14 @@ contract DaysLeft is owned {
         require(!isRegistered[_newAddress]);
         
         // Cannot be born in the future
-        require(_birth <= int(now));
         
+        require(_birth <= int(currentTime()));
         // Overflow check
         require(addressCount + 1 > addressCount);
         
         // Information
         birthOf[_newAddress] = _birth;
-        creationOf[_newAddress] = now;
+        creationOf[_newAddress] = currentTime();
         isRegistered[_newAddress] = true;
         
         addressOfIndex[addressCount] = _newAddress;
@@ -211,12 +211,12 @@ contract DaysLeft is owned {
     */
     function timeTokensLeft(int birthDay) public view returns (int) {
         // Cannot be born in the future
-        if(birthDay > int(now))
+        if(birthDay > int(currentTime()))
             return 0;
 
         // Note: we first multiply so we have a more accurate balance
-        //return int(balanceAtBirth) - int((now - birthDay) / 1 days * 10 ** uint256(decimals));
-        return int(balanceAtBirth) - int(uint(int(now) - birthDay) * 10 ** uint256(decimals)) / 1 days;
+        //return int(balanceAtBirth) - int((currentTime() - birthDay) / 1 days * 10 ** uint256(decimals));
+        return int(balanceAtBirth) - int(uint(int(currentTime()) - birthDay) * 10 ** uint256(decimals)) / 1 days;
     }
     function timeTokensLeftOf(address who) public view returns (int) {
         if(!isRegistered[who])
@@ -224,6 +224,13 @@ contract DaysLeft is owned {
 
         var birthDay = birthOf[who];
         return timeTokensLeft(birthDay);
+    }
+
+    /** The current timestamp
+    */
+    function currentTime() public view returns (uint) {
+        // Warning: now does not mean current time. Now is an alias for block.timestamp. Block.timestamp can be influenced by miners to a certain degree, be careful.
+        return now;
     }
 
     ///// Development Functionality /////
