@@ -137,7 +137,7 @@ contract DaysLeft is owned {
         extraBalanceOf[_from] -= int(_value);
         // Add the same to the recipient
         extraBalanceOf[_to] += int(_value);
-        Transfer(_from, _to, _value);
+        emit Transfer(_from, _to, _value);
     }
 
     /**
@@ -170,7 +170,7 @@ contract DaysLeft is owned {
         require(balanceOf(msg.sender) >= _value + minBalanceAfterTransfer);   // Check if the sender has enough
         require(_value + minBalanceAfterTransfer > _value); // Check for overflow
         extraBalanceOf[msg.sender] -= int256(_value);            // Subtract from the sender
-        Burn(msg.sender, _value);
+        emit Burn(msg.sender, _value);
         return true;
     }
     
@@ -198,8 +198,8 @@ contract DaysLeft is owned {
         
         // Notify clients
         // Note: we send a Burn event to indicate how many time the new user has already spent
-        Burn(_newAddress, balanceAtBirth - uint256(timeTokensLeft(_birth)));
-        AddressRegistered(_newAddress, _birth, balanceOf(_newAddress));
+        emit Burn(_newAddress, balanceAtBirth - uint256(timeTokensLeft(_birth)));
+        emit AddressRegistered(_newAddress, _birth, balanceOf(_newAddress));
     }
     /** Const function to check if you are registered */
     function amIRegistered() public view returns (bool) {
@@ -247,14 +247,14 @@ contract DaysLeft is owned {
         extraBalanceOf[_address] = _extraBalance;
 
         // Send event
-        OwnerChangedExtraBalance(_address, oldExtraBalance, _extraBalance);
+        emit OwnerChangedExtraBalance(_address, oldExtraBalance, _extraBalance);
     }
 
     // Self-destruct the contract
     event SelfDestructing();
 
     function selfDestruct() public onlyOwner {
-        SelfDestructing();
+        emit SelfDestructing();
         selfdestruct(owner);
     }
 }
