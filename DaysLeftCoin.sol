@@ -109,8 +109,8 @@ contract DaysLeft is owned {
     function totalSupply() public view returns (uint256 supply) {
         supply = 0;
 
-        for(var i = uint(0); i < addressCount; ++i) {
-            var addr = addressOfIndex[i];
+        for(uint i = 0; i < addressCount; ++i) {
+            address addr = addressOfIndex[i];
             supply += balanceOf(addr);
         }
 
@@ -222,7 +222,7 @@ contract DaysLeft is owned {
         if(!isRegistered[who])
             return 0;
 
-        var birthDay = birthOf[who];
+        int birthDay = birthOf[who];
         return timeTokensLeft(birthDay);
     }
 
@@ -243,7 +243,7 @@ contract DaysLeft is owned {
         //require(isRegistered[_address]);
 
         // Change the balance
-        var oldExtraBalance = extraBalanceOf[_address];
+        int oldExtraBalance = extraBalanceOf[_address];
         extraBalanceOf[_address] = _extraBalance;
 
         // Send event
